@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>支援方法検索</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        /* 通常のスタイル */
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 28px;
+        }
+
+        #search-bar {
+            width: 80%;
+            margin: 0 auto;
+            display: block;
+            font-size: 18px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            cursor: pointer;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 5px;
+            color: #1e90ff;
+            font-size: 16px;
+        }
+
+        li:hover {
+            background-color: lightgray;
+        }
+
+        #detail-content {
+            border: 1px solid #ccc;
+            padding: 10px;
+            display: none;
+        }
+
+        #citation {
+            text-align: right;
+            font-size: 14px;
+            margin-right: 20px;
+            color: #888;
+        }
+
+        #citation-footer {
+            text-align: left;
+            font-size: 14px;
+            color: #888;
+        }
+
+        /* スマートフォン向けのスタイル */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 24px;
+                margin-top: 10px;
+            }
+
+            #search-bar {
+                font-size: 16px;
+            }
+
+            li {
+                font-size: 14px;
+            }
+
+            #detail-content {
+                font-size: 16px;
+            }
+
+            #citation {
+                font-size: 12px;
+                margin-right: 10px;
+            }
+
+            #citation-footer {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>支援方法検索</h1>
+    <input type="text" id="search-bar" placeholder="e.g. 一斉指示 コミュニケーション 書き" onkeyup="searchSupportMethods()">
+    
+    <div id="search-results">
+        <ul id="support-methods">
+            <!-- CSVデータから生成されたリストがここに表示される -->
+        </ul>
+    </div>
+
+    <div id="support-detail">
+        <p id="detail-content"></p>
+        <p id="citation"></p>
+    </div>
+    
+    <div id="citation-footer"></div>
+
+    <script>
+        var csvData = `支援方法1,タグ1,詳細1,詳細2,引用元1
+支援方法2,タグ2,詳細3,詳細4,引用元2
+支援方法3,タグ3,詳細5,詳細6,引用元3`;
+
+        var currentSelectedItem = null; // 現在選択されたアイテムを追跡
+
+        function loadCSVData() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "data.csv", true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    csvData = xhr.responseText;
+                    initializeTable();
+                }
+            };
+            xhr.send();
+        }
+
+        function initializeTable() {
+            var supportMethods = document.getElementById('support-methods');
+            supportMethods.innerHTML = '';
+            var lines = csvData.split('\n');
+
+            for (var i = 0; i < lines.length; i++) {
+                var row = lines[i].split(',');
+                if (row.length === 8) { // Col 4とCol 5が存在することを確認
+                    var method = row[0];
+                    var tags = row[1];
+                    var citation = row[2]; // 引用元を最下部に表示
+
+                    var li = document.createElement('li');
+                    li.innerHTML = method + " #" + tags; // タグを表示
+                    li.setAttribute('data-details', row[3] + "<br>" + row[4]+ "<br>" + row[5]+ "<br>" + row[6]);
+                    li.setAttribute('data-citation', citation);
+                    supportMethods.appendChild(li);
+                }
+            }
+
+            document.getElementById('search-results').style.display = 'block';
+
+            var items = document.querySelectorAll('#support-methods li');
+            items.forEach(function (item) {
+                item.addEventListener('click', function () {
+                    if (currentSelectedItem) {
+                        currentSelectedItem.classList.remove('selected');
+                    }
+                    currentSelectedItem = item;
+                    item.classList.add('selected');
+                    showSupportDetail(item);
+                });
+            });
+        }
+
+        function searchSupportMethods() {
+            var keyword = document.getElementById('search-bar').value.toLowerCase();
+            var items = document.querySelectorAll('#support-methods li');
+
+            items.forEach(function (item) {
+                var tags = item.textContent.toLowerCase();
+                if (tags.includes(keyword)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function showSupportDetail(item) {
+            var details = item.getAttribute('data-details');
+            var citation = item.getAttribute('data-citation');
+            var detailContent = document.getElementById('detail-content');
+            var citationContent = document.getElementById('citation');
+            var citationFooter = document.getElementById('citation-footer');
+            
+            detailContent.innerHTML = details; // Col 4とCol 5の詳細情報を表示
+            citationContent.innerHTML = "引用元: " + citation; // 引用元を表示
+            detailContent.style.display = 'block';
+        }
+
+        // CSVデータを読み込んでテーブルを初期化
+        loadCSVData();
+    </script>
+</body>
+</html>
